@@ -183,7 +183,7 @@
                                 </p>
                                 <!-- Kártyacserére utaló kis felirat -->
                                 <p class="mt-4 text-lg md:text-xl font-semibold text-[#118AB2] uppercase relative z-10">
-                                    Cserelap nyilvántartó
+                                    Csere- és hiánylap nyilvántartó
                                 </p>
                                 <p class="mt-2 text-md text-gray-500 relative z-10">
                                     Kérjük, válassz kategóriát a **bal oldali menüből** a lapozáshoz!
@@ -494,8 +494,9 @@
         // Klubok Fő Gomb/Címke
         const clubButton = document.createElement('button');
         clubButton.id = 'club-main-button'; 
-        // JAVÍTVA: Hozzáadva a text-left w-full-hoz a helyes asztali pozícionáláshoz.
-        clubButton.className = 'w-full text-left font-bold text-sm py-2 px-3 rounded-lg transition-colors duration-200 bg-gray-200 text-gray-700 hover:bg-gray-300';
+        // JAVÍTVA: A text-left w-full-hoz hozzáadva a helyes asztali pozícionáláshoz.
+        // Eltávolítva a 'text-left' a mobil centírozás miatt és CSS-ben fixáljuk.
+        clubButton.className = 'w-full font-bold text-sm py-2 px-3 rounded-lg transition-colors duration-200 bg-gray-200 text-gray-700 hover:bg-gray-300';
         clubButton.textContent = 'Klubok ▲'; // Név javítva
         
         // Lenyíló Konténer (Klubok)
