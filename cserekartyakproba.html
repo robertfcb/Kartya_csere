@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cserekártya Nézegető</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #f0f4f8; }
+        .card-viewer { min-height: 400px; }
+        /* Horizontalis görgetés a kategóriáknak, ha nem férnek el */
+        #category-filter { overflow-x: auto; white-space: nowrap; }
+        /* A kép kitölti a területet, de nem vágja le a szélét. */
+        #card-image { object-fit: contain !important; }
+        /* Modern betűtípus a logóhoz */
+        .modern-font { font-family: 'Inter', sans-serif; letter-spacing: 0.1em; }
+
+        /* KONFETTI/HÓPEHELY ANIMÁCIÓ STÍLUSOK (CSAK A KEZDŐKÉPERNYŐN LÁTHATÓ) */
+        .confetti-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none; /* Fontos, hogy ne akadályozza az egérkattintásokat */
+            overflow: hidden;
+            z-index: 5;
+        }
+        .confetti {
+            position: absolute;
+            width: 8px;
+            height: 8px;
+            background-color: transparent;
+            border-radius: 50%;
+        }
+        /* ÚJ KEYFRAMES: A pehely megáll a konténer alján (kb. 15px távolságra) */
+        @keyframes fall {
+            from { top: -10px; } 
+            to { top: calc(100% - 15px); }
+        }
+    </style>
+</head>
+<body class="text-[#073B4C] min-h-screen">
+
+    <div class="container mx-auto p-4 md:p-8">
+        <header class="text-center mb-8">
+            <h1 class="text-4xl font-extrabold text-[#118AB2]">CSERE KÁRTYÁK</h1>
+            <p class="mt-2 text-lg text-gray-600">Lapozható lista kategóriák szerint</p>
+        </header>
+
+        <!-- Kategória szűrő / Menü -->
+        <nav class="sticky top-0 bg-[#f0f4f8] z-10 py-3 mb-6 shadow-md rounded-lg">
+            <div id="category-filter" class="flex justify-start gap-1 p-2">
+                <!-- Kategória gombok generálása JS-ből -->
+            </div>
+        </nav>
+
+        <!-- Fő tartalom / Kártya nézegető -->
+        <main class="grid grid-cols-1 gap-8">
+            <div id="card-viewer-container" class="bg-white rounded-xl shadow-2xl p-6 card-viewer flex flex-col items-center justify-between">
+                
+                <!-- Kezdőképernyő / Kártya adatok -->
+                <div id="card-display-area" class="w-full max-w-xl text-center">
+                    
+                    <!-- Semleges kezdőképernyő tartalom (Default View) -->
+                    <div id="welcome-screen" class="p-8 relative">
+                        
+                        <!-- KONFETTI CONTAINER -->
+                        <div id="confetti-effect" class="confetti-container"></div>
+                        <!-- END KONFETTI -->
+
+                        <!-- FŐ TARTALOM (Z-INDEX 10-ZEL) -->
+                        <div class="relative z-10">
+                            
+                            <!-- Frissített logó és felirat -->
+                            <h2 class="text-5xl md:text-6xl font-extrabold text-[#073B4C] modern-font mb-2 tracking-tighter relative z-10">
+                                PANINI ADRENALYN
+                            </h2>
+                            <p class="4xl font-black text-[#FF6B6B] modern-font mb-6 tracking-widest relative z-10">
+                                XL <span class="text-[#06D6A0]">2026</span>
+                            </p>
+                            <!-- Kártyacserére utaló kis felirat -->
+                            <p class="mt-4 text-lg md:text-xl font-semibold text-[#118AB2] uppercase relative z-10">
+                                Csere- és hiánylap nyilvántartó
+                            </p>
+                            <p class="mt-2 text-md text-gray-500 relative z-10">
+                                Kérjük, válassz kategóriát a fenti menüből a lapozáshoz!
+                            </p>
+
+                            <!-- ÚJ: Kapcsolatfelvételi szöveg -->
+                            <p class="mt-12 text-md md:text-lg font-semibold text-[#FF6B6B] modern-font relative z-10">
+                                Ha valamelyik kártya érdekel, keress meg messengeren, vagy a csoportban.
+                                <br>
+                                Üdv Robi
+                            </p>
+                            <!-- END ÚJ -->
+                        </div>
+                    </div>
+
+                    <!-- Kártya megjelenítés (Filtered View - Rejtve indításkor) -->
+                    <div id="filtered-card-view" class="hidden">
+                        <p id="current-category" class="text-xl font-bold text-[#FF6B6B] mb-4 uppercase"></p>
+                        <div class="relative w-full h-80 bg-gray-200 rounded-lg overflow-hidden shadow-xl mb-4 mx-auto max-w-[300px]">
+                            <img id="card-image" class="w-full h-full transition-opacity duration-300" 
+                                 src="https://placehold.co/300x400/06D6A0/073B4C?text=Cserek%C3%A1rtya+Fot%C3%B3" 
+                                 onerror="this.src='https://placehold.co/300x400/06D6A0/073B4C?text=K%C3%A9p+Nem+El%C3%A9rhet%C5%91'">
+                        </div>
+                        
+                        <h2 id="card-name" class="3xl font-extrabold text-[#073B4C] my-2">Kártya Neve</h2>
+                        <p class="text-lg font-semibold text-[#118AB2]">Sorszám: <span id="card-number" class="text-[#073B4C]">00</span></p>
+                        <p class="text-md text-gray-500">Csapat: <span id="card-team">Nincs Adat</span></p>
+                    </div>
+                </div>
+
+                <!-- Lapozó gombok (Rejtve indításkor) -->
+                <div id="pagination-controls" class="hidden flex justify-between w-full max-w-xl mt-6">
+                    <button id="prev-button" 
+                            class="bg-[#FFD166] text-[#073B4C] font-bold py-3 px-6 rounded-full shadow-lg transition-all hover:bg-[#FF6B6B] hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed">
+                        &larr; Előző
+                    </button>
+                    
+                    <p id="card-counter" class="text-xl font-bold self-center text-[#118AB2]"></p>
+
+                    <button id="next-button" 
+                            class="bg-[#FFD166] text-[#073B4C] font-bold py-3 px-6 rounded-full shadow-lg transition-all hover:bg-[#06D6A0] hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed">
+                        Következő &rarr;
+                    </button>
+                </div>
+            </div>
+        </main>
+    </div>
+
+<script>
+    
+    // A KÁRTYÁK KATEGÓRIÁI ÉS A KLUBNEVEK MOST MÁR KÜLÖN SZŰRŐDNEK!
+
+    const swapCardsData = [
+        // Ide illeszd be a kártya adataidat! FONTOS: vesszővel válaszd el az elemeket, és az utolsó után NE tegyél vesszőt!
+        
+        // KÜLÖNLEGES KÁRTYÁK MINTÁI
+        { category: "World Cup", name: "WC Lap 1 (Minta)", number: 40, team: "Brazil", img: "https://placehold.co/300x400/118AB2/ffffff?text=World+Cup+40", isClub: false },
+        { category: "World Cup", name: "WC Lap - Harry Kane", number: 12, team: "England", img: "https://placehold.co/300x400/118AB2/ffffff?text=WC+England+12", isClub: false },
+        { category: "Elite kártyák", name: "Cristiano Ronaldo", number: 19, team: "Al Nassr", img: "https://placehold.co/300x400/FF6B6B/ffffff?text=Elite+Ronaldo", isClub: false },
+        { category: "Fans' favourite kártyák", name: "Fan Fav Lap A", number: 98, team: "Best Player A", img: "https://placehold.co/300x400/FFD166/073B4C?text=Fan+Fav+98", isClub: false },
+        { category: "Golden Baller", name: "Golden Baller Lap", number: 1, team: "Messi", img: "https://placehold.co/300x400/FFD166/073B4C?text=Golden+Baller+1", isClub: false },
+        
+        // PARALEL KÁRTYÁK MINTÁI
+        { category: "Kék paralel", name: "Kék Paralel Lap", number: 55, team: "Chelsea", img: "https://placehold.co/300x400/118AB2/ffffff?text=K%C3%A9k+Paralel+55", isClub: false },
+        { category: "Piros paralel", name: "Piros Paralel Lap", number: 66, team: "Arsenal", img: "https://placehold.co/300x400/FF6B6B/ffffff?text=Piros+Paralel+66", isClub: false },
+        { category: "Rózsaszín paralel", name: "Rózsaszín Paralel Lap", number: 77, team: "PSG", img: "https://placehold.co/300x400/FF6B6B/ffffff?text=R%C3%B3zsasz%C3%ADn+77", isClub: false },
+        
+        // KLUB KÁRTYÁK MINTÁI (isClub: true)
+        { category: "Klub Kártyák", name: "Leverkusen Lap 1", number: 10, team: "Leverkusen", img: "https://placehold.co/300x400/06D6A0/073B4C?text=Leverkusen+10", isClub: true },
+        { category: "Klub Kártyák", name: "PSV Lap 1", number: 5, team: "PSV", img: "https://placehold.co/300x400/118AB2/ffffff?text=PSV+5", isClub: true },
+        { category: "Klub Kártyák", name: "Liverpool Lap 1", number: 6, team: "Liverpool", img: "https://placehold.co/300x400/FF6B6B/ffffff?text=Liverpool+6", isClub: true },
+        { category: "Klub Kártyák", name: "Frankfurt Lap 1", number: 1, team: "Frankfurt", img: "https://placehold.co/300x400/FFD166/073B4C?text=Frankfurt+1", isClub: true },
+        { category: "Klub Kártyák", name: "Paris Lap 1", number: 1, team: "Paris", img: "https://placehold.co/300x400/06D6A0/073B4C?text=Paris+1", isClub: true },
+        { category: "Klub Kártyák", name: "Al Nassr Lap 1", number: 1, team: "Al Nassr", img: "https://placehold.co/300x400/118AB2/ffffff?text=Al+Nassr+1", isClub: true },
+        { category: "Klub Kártyák", name: "Inter Lap 1", number: 1, team: "Inter", img: "https://placehold.co/300x400/FF6B6B/ffffff?text=Inter+1", isClub: true },
+        { category: "Klub Kártyák", name: "Milan Lap 1", number: 3, team: "Milan", img: "https://placehold.co/300x400/FFD166/073B4C?text=Milan+3", isClub: true },
+        { category: "Klub Kártyák", name: "Real Madrid Lap 1", number: 5, team: "Real Madrid", img: "https://placehold.co/300x400/06D6A0/073B4C?text=Real+5", isClub: true },
+        { category: "Klub Kártyák", name: "Barcelona Lap 1", number: 1, team: "Barcelona", img: "https://placehold.co/300x400/118AB2/ffffff?text=Barcelona+1", isClub: true },
+        { category: "Klub Kártyák", name: "Botafogo Lap 1", number: 3, team: "Botafogo", img: "https://placehold.co/300x400/FF6B6B/ffffff?text=Botafogo+3", isClub: true },
+        { category: "Klub Kártyák", name: "Sporting Lap 1", number: 6, team: "Sporting", img: "https://placehold.co/300x400/FFD166/073B4C?text=Sporting+6", isClub: true },
+        { category: "Klub Kártyák", name: "Olympiacos Lap 1", number: 13, team: "Olympiacos", img: "https://placehold.co/300x400/06D6A0/073B4C?text=Olympiacos+13", isClub: true },
+        { category: "Klub Kártyák", name: "Marseille Lap 1", number: 5, team: "Marseille", img: "https://placehold.co/300x400/118AB2/ffffff?text=Marseille+5", isClub: true },
+        { category: "Klub Kártyák", name: "Ajax Lap 1", number: 10, team: "Ajax", img: "https://placehold.co/300x400/FF6B6B/ffffff?text=Ajax+10", isClub: true },
+        { category: "Klub Kártyák", name: "Atletico Madrid Lap 1", number: 2, team: "Atletico Madrid", img: "https://placehold.co/300x400/FFD166/073B4C?text=Atletico+2", isClub: true }
+    ];
+
+    let currentCategory = null; // null-ra állítva a kezdőképernyő miatt
+    let currentCardIndex = 0;
+    let filteredCards = [];
+
+    const elements = {
+        filterContainer: document.getElementById('category-filter'),
+        cardImage: document.getElementById('card-image'),
+        cardName: document.getElementById('card-name'),
+        cardNumber: document.getElementById('card-number'),
+        cardTeam: document.getElementById('card-team'),
+        currentCategoryEl: document.getElementById('current-category'),
+        cardCounter: document.getElementById('card-counter'),
+        prevButton: document.getElementById('prev-button'),
+        nextButton: document.getElementById('next-button'),
+        welcomeScreen: document.getElementById('welcome-screen'),
+        filteredCardView: document.getElementById('filtered-card-view'),
+        paginationControls: document.getElementById('pagination-controls'),
+        confettiEffect: document.getElementById('confetti-effect')
+    };
+
+    const HUNGARIAN_COLORS = ['#FF6B6B', '#FFFFFF', '#06D6A0']; // Piros, Fehér, Zöld
+
+    let confettiInterval;
+
+    function startConfetti() {
+        // Hiba javítása: Először mindig töröljük a korábbi intervallumot
+        stopConfetti(); 
+
+        const container = elements.confettiEffect;
+        
+        function createConfetti() {
+            const confetti = document.createElement('div');
+            confetti.classList.add('confetti');
+
+            // Véletlenszerű színválasztás
+            const color = HUNGARIAN_COLORS[Math.floor(Math.random() * HUNGARIAN_COLORS.length)];
+            confetti.style.backgroundColor = color === '#FFFFFF' ? 'rgba(255, 255, 255, 0.7)' : color;
+            
+            // Véletlenszerű pozíció és sebesség
+            const startX = Math.random() * container.offsetWidth;
+            const size = Math.random() * 8 + 4; // 4px - 12px
+            const duration = Math.random() * 5 + 7; // 7s - 12s
+
+            confetti.style.left = startX + 'px';
+            confetti.style.width = size + 'px';
+            confetti.style.height = size + 'px';
+            
+            // ÚJ: Animáció futtatása egyszer, megállás a végállapotban
+            confetti.style.animation = `fall ${duration}s linear forwards`; 
+            
+            container.appendChild(confetti);
+
+            // Eltávolítjuk az animationend listenert, így a pehely a helyén marad
+        }
+
+        // 500ms-ként indítunk egy új pelyhet (lassabb hullás)
+        confettiInterval = setInterval(createConfetti, 500); 
+    }
+
+    function stopConfetti() {
+        if (confettiInterval) {
+            clearInterval(confettiInterval);
+            confettiInterval = null;
+            // Eltávolítjuk a hulló pelyheket, DE az összegyűlteket (amik megálltak) meghagyjuk.
+            // Ehelyett most már nem kell törölni, mert a filterCards hívásánál a welcome-screen container (és így a confetti-container is) rejtve lesz.
+        }
+    }
+
+
+    // ÚJ FÜGGVÉNY: Lekéri az összes kategóriát. A "Kezdőoldal" kerül a legelejére.
+    function getUniqueCategories() {
+        const specialCategories = new Set(swapCardsData
+            .filter(card => !card.isClub)
+            .map(card => card.category)
+        );
+
+        const clubNames = new Set(swapCardsData
+            .filter(card => card.isClub)
+            .map(card => card.team)
+        );
+
+        const allCategories = [
+            'Kezdőoldal', // ÚJ: A lista legelejére került a visszalépéshez
+            ...Array.from(specialCategories).sort(),
+            '— Klubok —', // Elválasztó
+            ...Array.from(clubNames).sort(),
+            'Összes kártya' // A lista legutolsó eleme
+        ];
+        
+        return allCategories;
+    }
+
+    // FÜGGVÉNY: Kezeli a szűrést kategória ÉS klubnév alapján, beleértve az új "Kezdőoldal" funkciót is.
+    function filterCards(filterValue) {
+        
+        if (filterValue === 'Kezdőoldal') {
+            currentCategory = 'Kezdőoldal'; // Belsőleg beállítjuk, hogy aktív maradjon
+            filteredCards = [];
+            
+            // Visszaváltás a kezdőképernyőre
+            elements.welcomeScreen.classList.remove('hidden');
+            elements.filteredCardView.classList.add('hidden');
+            elements.paginationControls.classList.add('hidden');
+            
+            updateFilterButtons(filterValue);
+            startConfetti(); // Konfetti indítása
+            return;
+        }
+
+        // Normál szűrési logika
+        if (filterValue === 'Összes kártya') {
+            filteredCards = swapCardsData;
+        } else if (filterValue === '— Klubok —') {
+            filteredCards = swapCardsData;
+        } else {
+            // Szűrés kategóriára VAGY csapatnévre
+            filteredCards = swapCardsData.filter(card => 
+                card.category === filterValue || card.team === filterValue
+            );
+        }
+        
+        currentCardIndex = 0;
+        currentCategory = filterValue;
+        
+        // Váltás a kártya nézetre
+        elements.welcomeScreen.classList.add('hidden');
+        elements.filteredCardView.classList.remove('hidden');
+        elements.paginationControls.classList.remove('hidden');
+        
+        stopConfetti(); // Konfetti leállítása
+        updateCardDisplay();
+        updateFilterButtons(filterValue);
+    }
+
+    function updateFilterButtons(activeCategory) {
+        // Ha null az activeCategory (induláskor), aktiválja a "Kezdőoldal"-t
+        const categoryToActivate = activeCategory === null ? 'Kezdőoldal' : activeCategory; 
+
+        document.querySelectorAll('.filter-button').forEach(button => {
+            if (button.dataset.category === categoryToActivate) {
+                // Aktív gomb stílusa
+                button.classList.remove('bg-gray-200', 'text-gray-700', 'hover:bg-gray-300');
+                button.classList.add('bg-[#118AB2]', 'text-white', 'shadow-md');
+            } else if (button.dataset.category === '— Klubok —') {
+                // Elválasztó gomb stílusa
+                button.classList.remove('bg-[#118AB2]', 'text-white', 'shadow-md');
+                button.classList.add('bg-gray-400', 'text-white', 'cursor-default'); 
+            } else {
+                // Inaktív gomb stílusa
+                button.classList.remove('bg-[#118AB2]', 'text-white', 'shadow-md', 'bg-gray-400', 'text-white');
+                button.classList.add('bg-gray-200', 'text-gray-700', 'hover:bg-gray-300');
+            }
+            // Kisebb betűméret és szűkebb margó a jobb elrendezés érdekében
+            button.classList.add('text-xs', 'sm:text-sm', 'px-3', 'py-1'); 
+            button.classList.remove('px-4', 'py-2');
+        });
+    }
+
+    function renderFilterButtons() {
+        const uniqueCategories = getUniqueCategories();
+        elements.filterContainer.innerHTML = ''; // Meglévő gombok törlése
+        uniqueCategories.forEach(category => {
+            const button = document.createElement('button');
+            const isSeparator = category === '— Klubok —';
+
+            button.className = 'filter-button text-xs sm:text-sm font-semibold py-1 px-3 rounded-full transition-colors duration-200 whitespace-nowrap';
+            button.dataset.category = category;
+            button.textContent = category;
+            
+            if (isSeparator) {
+                // Elválasztó stílusa
+                button.classList.add('bg-gray-400', 'text-white', 'cursor-default', 'shadow-sm', 'mr-2');
+                button.disabled = true;
+            } else {
+                button.addEventListener('click', () => filterCards(category));
+            }
+
+            elements.filterContainer.appendChild(button);
+        });
+        
+        // Indításkor (null) hívjuk meg, ami aktiválja a "Kezdőoldal" gombot ÉS elindítja a konfettit.
+        updateFilterButtons(null);
+        startConfetti();
+    }
+
+    function updateCardDisplay() {
+        if (filteredCards.length === 0) {
+            elements.cardImage.src = 'https://placehold.co/300x400/FF6B6B/ffffff?text=Nincs+k%C3%A1rtya';
+            elements.cardName.textContent = 'Nincs elérhető kártya ebben a kategóriában.';
+            elements.cardNumber.textContent = 'N/A';
+            elements.cardTeam.textContent = 'N/A';
+            elements.currentCategoryEl.textContent = currentCategory;
+            elements.cardCounter.textContent = '0 / 0';
+            elements.prevButton.disabled = true;
+            elements.nextButton.disabled = true;
+            return;
+        }
+
+        const card = filteredCards[currentCardIndex];
+        
+        elements.cardImage.style.opacity = '0'; 
+        setTimeout(() => {
+            // A kép beállítása lassított effekttel
+            elements.cardImage.classList.remove('object-cover'); 
+            elements.cardImage.src = card.img;
+            elements.cardImage.style.opacity = '1';
+        }, 150); 
+        
+        elements.cardName.textContent = card.name;
+        elements.cardNumber.textContent = card.number;
+        elements.cardTeam.textContent = card.team;
+        elements.currentCategoryEl.textContent = currentCategory;
+        elements.cardCounter.textContent = `${currentCardIndex + 1} / ${filteredCards.length}`;
+
+        elements.prevButton.disabled = currentCardIndex === 0;
+        elements.nextButton.disabled = currentCardIndex === filteredCards.length - 1;
+    }
+
+    function handlePrev() {
+        if (currentCardIndex > 0) {
+            currentCardIndex--;
+            updateCardDisplay();
+        }
+    }
+
+    function handleNext() {
+        if (currentCardIndex < filteredCards.length - 1) {
+            currentCardIndex++;
+            updateCardDisplay();
+        }
+    }
+
+    elements.prevButton.addEventListener('click', handlePrev);
+    elements.nextButton.addEventListener('click', handleNext);
+
+    document.addEventListener('DOMContentLoaded', renderFilterButtons);
+
+</script>
+
+</body>
+</html>
