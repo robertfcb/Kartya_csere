@@ -69,25 +69,32 @@
                 display: block;
             }
             
-            /* ÚJ: Korlátozza a gombok szélességét mobilon és középre igazítja őket */
+            /* JAVÍTVA: Balra igazítjuk a gombokat mobilon is */
             #mobile-menu-wrapper .filter-button {
-                max-width: 80%; /* A szélesség 80%-a */
-                margin-left: auto;
+                max-width: 90%; /* Kicsit szélesebbre állítva */
+                margin-left: 0; /* Balra igazítva */
                 margin-right: auto;
-                text-align: center;
+                text-align: left !important; /* Balra igazítva */
             }
             
             /* A klub lenyíló menü gombjainak igazítása (a behúzás eltávolítása) */
             #mobile-menu-wrapper #club-dropdown-menu .filter-button {
-                padding-left: 0; 
+                padding-left: 1rem; 
             }
 
             /* A klubok fő gombjának szöveg igazítása */
             #club-main-button {
-                 text-align: center !important;
-                 max-width: 80%;
-                 margin-left: auto;
+                 text-align: left !important; /* Balra igazítva */
+                 max-width: 90%;
+                 margin-left: 0;
                  margin-right: auto;
+            }
+            
+            /* Maga a menü konténer középre van igazítva, de a gombok balra vannak igazítva a konténerükben */
+            #mobile-menu-wrapper aside {
+                max-width: 350px;
+                margin-left: auto;
+                margin-right: auto;
             }
         }
         
@@ -489,13 +496,13 @@
 
         // 2. Klubok lenyíló menü (CLICK logikával)
         const clubWrapper = document.createElement('div');
-        // Kijavítva: Eltávolítom a 'w-full' osztályt a clubWrapper-ről, ami konfliktust okozott a mobil centrálással.
         clubWrapper.id = 'club-wrapper'; 
         
         // Klubok Fő Gomb/Címke
         const clubButton = document.createElement('button');
         clubButton.id = 'club-main-button'; 
         // JAVÍTVA: A text-left hozzáadva a w-full-hoz és a padding/méret javítva
+        // KLASSZ JAVÍTÁS: A 'text-left' most már a gombokon van.
         clubButton.className = 'w-full text-left font-bold text-sm py-1.5 px-3 rounded-lg transition-colors duration-200 bg-gray-200 text-gray-700 hover:bg-gray-300';
         clubButton.textContent = 'Klubok ▲'; // Név javítva
         
