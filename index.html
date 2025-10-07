@@ -183,7 +183,7 @@
                                 </p>
                                 <!-- Kártyacserére utaló kis felirat -->
                                 <p class="mt-4 text-lg md:text-xl font-semibold text-[#118AB2] uppercase relative z-10">
-                                    Cserekártya nyilvántartó
+                                    Cserelap nyilvántartó
                                 </p>
                                 <p class="mt-2 text-md text-gray-500 relative z-10">
                                     Kérjük, válassz kategóriát a **bal oldali menüből** a lapozáshoz!
@@ -488,7 +488,7 @@
 
         // 2. Klubok lenyíló menü (CLICK logikával)
         const clubWrapper = document.createElement('div');
-        clubWrapper.className = 'w-full'; // A csúszást okozó 'relative' eltávolítva
+        // Kijavítottam: Eltávolítom a 'w-full' osztályt a clubWrapper-ről, ami konfliktust okozott a mobil centrálással.
         clubWrapper.id = 'club-wrapper'; 
         
         // Klubok Fő Gomb/Címke
@@ -518,6 +518,7 @@
             }
         });
         
+        // JAVÍTVA: Meg kell tartani a clubButton w-full-t (a button-ön) a megfelelő asztali szélességhez.
         clubWrapper.appendChild(clubButton);
 
         structured.clubs.forEach(clubName => {
@@ -589,4 +590,3 @@
 </script>
 </body>
 </html>
-
