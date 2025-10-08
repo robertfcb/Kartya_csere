@@ -203,18 +203,34 @@
                                 <!-- END BANNER HELY MOBILRA -->
 
                                 <p class="mt-2 text-md text-gray-500 relative z-10">
-                                    A kártyák mindegyike hibátlan állapotban van, védőtasakban tartva.
+                                    Kérjük, válassz kategóriát a **bal oldali menüből** a lapozáshoz!
                                 </p>
 
                                 <!-- Kapcsolatfelvételi szöveg -->
                                 <p class="mt-12 text-md md:text-lg font-semibold text-[#FF6B6B] modern-font relative z-10">
-                                    Ha valamelyik kártya érdekel, nyugodtan keress meg messengeren, vagy a csoportban.
+                                    Ha valamelyik kártya érdekel, keress meg messengeren, vagy a csoportban.
                                     <br>
-                                   
+                                    Üdv Robi
                                 </p>
                                 <!-- END ÚJ -->
                             </div>
                         </div>
+                        
+                        <!-- HIÁNYZÓ KÁRTYÁK NÉZET -->
+                        <div id="missing-cards-view" class="hidden text-left max-w-full mx-auto p-4 md:p-8">
+                            <h2 class="text-3xl font-extrabold text-[#073B4C] modern-font mb-2 tracking-tighter">
+                                PANINI ADRENALYN
+                            </h2>
+                            <p class="text-2xl font-black text-[#FF6B6B] modern-font mb-6 tracking-widest">
+                                XL <span class="text-[#06D6A0]">2026</span>
+                            </p>
+                            <h3 class="text-xl font-bold text-[#118AB2] mb-4">Hiányzó Lapok Részletes Listája</h3>
+                            <div id="missing-cards-list" class="space-y-4">
+                                <!-- JS generálja ide a hiányzó lapokat -->
+                            </div>
+                        </div>
+                        <!-- END HIÁNYZÓ KÁRTYÁK NÉZET -->
+
 
                         <!-- Kártya megjelenítés (Filtered View - Rejtve indításkor) -->
                         <div id="filtered-card-view" class="hidden">
@@ -256,6 +272,28 @@
 <script>
     
     // A KÁRTYÁK KATEGÓRIÁI ÉS A KLUBNEVEK MOST MÁR KÜLÖN SZŰRŐDNEK!
+
+    const MISSING_CARDS_DATA = {
+        "World Cup": "5, 6, 8, 12, 17, 18, 21, 23, 25, 31, 32, 34, 35",
+        "Elite kártyák": "1, 2, 4, 7, 10, 18",
+        "Fans' favourite kártyák": "3, 5, 6, 13, 16, 19, 20, 21, 24, 25, 27, 28, 29, 38, 40, 43, 44, 45, 51, 55, 56, 58, 60, 61, 64, 66, 67, 71, 73, 74, 79, 80, 92, 97",
+        "Botafogo": "3, 10, 13",
+        "Frankfurt": "1, 5, 11, 13, 16, 17",
+        "Liverpool": "6, 9, 10, 11, 12, 13, 14",
+        "Olympiacos": "13, 18",
+        "Marseille": "5, 18",
+        "Inter": "1, 2, 3, 7, 14",
+        "Paris": "1, 3, 7, 13, 14, 16",
+        "Milan": "3, 4, 5, 6, 12",
+        "Leverkusen": "2, 5, 7, 10, 11, 13, 14, 18",
+        "Ajax": "10, 11",
+        "PSV": "3, 4, 6, 8, 10, 16, 17, 18",
+        "Sporting": "6, 9, 15",
+        "Al Nassr": "1, 7, 8, 9, 11, 13",
+        "Atletico Madrid": "2, 4",
+        "Barcelona": "1, 12, 15, 16",
+        "Real Madrid": "5, 8, 12, 13, 15"
+    };
 
     const swapCardsData = [
         // Ide illeszd be a kártya adataidat! FONTOS: vesszővel válaszd el az elemeket, és az utolsó után NE tegyél vesszőt!
@@ -314,7 +352,9 @@
         confettiEffect: document.getElementById('confetti-effect'),
         mobileMenuWrapper: document.getElementById('mobile-menu-wrapper'),
         mobileMenuToggle: document.getElementById('mobile-menu-toggle'),
-        toggleIcon: document.getElementById('toggle-icon')
+        toggleIcon: document.getElementById('toggle-icon'),
+        missingCardsView: document.getElementById('missing-cards-view'),
+        missingCardsList: document.getElementById('missing-cards-list')
     };
 
     const HUNGARIAN_COLORS = ['#FF6B6B', '#FFFFFF', '#06D6A0'];
@@ -370,7 +410,7 @@
         )).filter(cat => cat !== 'Klub Kártyák').sort();
 
         structuredCategories = {
-            regular: ['Kezdőoldal', ...specialCategories], // 'Összes kártya' eltávolítva
+            regular: ['Kezdőoldal', 'Hiányzó Kártyák', ...specialCategories], // 'Összes kártya' eltávolítva
             clubs: clubNames
         };
         return structuredCategories;
@@ -394,6 +434,47 @@
         toggleMobileMenu();
     });
     
+    // HIÁNYZÓ LAPOK LISTÁJÁNAK GENERÁLÁSA
+    function renderMissingCards() {
+        const listContainer = elements.missingCardsList;
+        listContainer.innerHTML = '';
+        
+        let htmlContent = '';
+        
+        const clubCategories = ["Botafogo", "Frankfurt", "Liverpool", "Olympiacos", "Marseille", "Inter", "Paris", "Milan", "Leverkusen", "Ajax", "PSV", "Sporting", "Al Nassr", "Atletico Madrid", "Barcelona", "Real Madrid"];
+
+        // 1. Különleges kártyák
+        for (const [category, numbers] of Object.entries(MISSING_CARDS_DATA)) {
+            if (!clubCategories.includes(category)) {
+                const count = (numbers.match(/\d+/g) || []).length;
+                htmlContent += `
+                    <div class="p-3 bg-[#f8f8f8] rounded-lg shadow-sm border border-gray-200">
+                        <h4 class="text-lg font-semibold text-[#FF6B6B]">${category} (${count} db)</h4>
+                        <p class="text-gray-700 break-words mt-1">${numbers}</p>
+                    </div>
+                `;
+            }
+        }
+        
+        // 2. Klubok rész
+        htmlContent += '<h4 class="text-xl font-bold text-[#118AB2] mt-6 mb-3 border-t pt-4 border-gray-300">Klubok (Csapatok)</h4>';
+        
+        for (const club of clubCategories) {
+            if (MISSING_CARDS_DATA[club]) {
+                const numbers = MISSING_CARDS_DATA[club];
+                const count = (numbers.match(/\d+/g) || []).length;
+                htmlContent += `
+                    <div class="p-3 bg-[#f8f8f8] rounded-lg shadow-sm border border-gray-200">
+                        <h4 class="text-lg font-semibold text-[#06D6A0]">${club} (${count} db)</h4>
+                        <p class="text-gray-700 break-words mt-1">${numbers}</p>
+                    </div>
+                `;
+            }
+        }
+        
+        listContainer.innerHTML = htmlContent;
+    }
+
 
     // FÜGGVÉNY: Kezeli a szűrést
     function filterCards(filterValue) {
@@ -409,6 +490,11 @@
             toggleMobileMenu(false); 
         }
 
+        // Nézet váltása
+        elements.welcomeScreen.classList.add('hidden');
+        elements.filteredCardView.classList.add('hidden');
+        elements.paginationControls.classList.add('hidden');
+        elements.missingCardsView.classList.add('hidden'); // Alapértelmezetten rejtjük
 
         if (filterValue === 'Kezdőoldal') {
             currentCategory = 'Kezdőoldal';
@@ -416,14 +502,21 @@
             
             // Közvetlen visszaugrás a kezdőlapra
             elements.welcomeScreen.classList.remove('hidden');
-            elements.filteredCardView.classList.add('hidden');
-            elements.paginationControls.classList.add('hidden');
             
             updateFilterButtons(filterValue);
             startConfetti();
             return;
         }
 
+        if (filterValue === 'Hiányzó Kártyák') {
+             currentCategory = 'Hiányzó Kártyák';
+             renderMissingCards();
+             elements.missingCardsView.classList.remove('hidden'); // Megjelenítjük a hiányzó lapok nézetet
+             stopConfetti();
+             updateFilterButtons(filterValue);
+             return;
+        }
+        
         if (filterValue === 'Összes kártya') {
             filteredCards = swapCardsData;
         } else {
@@ -436,7 +529,6 @@
         currentCardIndex = 0;
         currentCategory = filterValue;
         
-        elements.welcomeScreen.classList.add('hidden');
         elements.filteredCardView.classList.remove('hidden');
         elements.paginationControls.classList.remove('hidden');
         
@@ -464,16 +556,25 @@
         // Gombok frissítése
         document.querySelectorAll('.filter-button').forEach(button => {
             // Alap stílus
-            button.classList.remove('bg-[#118AB2]', 'text-white', 'shadow-md');
-            // Különleges stílus a klub almenü elemeire
-            if (button.closest('ul')) {
+            button.classList.remove('bg-[#118AB2]', 'text-white', 'shadow-md', 'bg-[#FF6B6B]'); // Piros eltávolítva
+            
+            if (button.dataset.category === 'Hiányzó Kártyák') {
+                 button.classList.add('bg-[#FF6B6B]', 'text-white', 'hover:bg-[#FF6B6B]80');
+                 if (button.dataset.category === categoryToActivate) {
+                     button.classList.add('shadow-md', 'ring-2', 'ring-[#FFD166]'); // Aktív piros kiemelés
+                 } else {
+                     button.classList.remove('shadow-md', 'ring-2', 'ring-[#FFD166]');
+                 }
+            } else if (button.closest('ul')) {
+                // Klub almenü stílusa
                 button.classList.add('text-gray-700', 'hover:bg-[#FFD166]');
             } else {
+                // Normál kategória stílusa
                 button.classList.add('bg-gray-200', 'text-gray-700', 'hover:bg-gray-300');
             }
 
-            // Aktív stílus
-            if (button.dataset.category === categoryToActivate) {
+            // Aktív stílus felülírása (normál/kezdőoldal/klub kategóriákhoz)
+            if (button.dataset.category === categoryToActivate && button.dataset.category !== 'Hiányzó Kártyák') {
                 button.classList.remove('bg-gray-200', 'text-gray-700', 'hover:bg-gray-300', 'hover:bg-[#FFD166]');
                 button.classList.add('bg-[#118AB2]', 'text-white', 'shadow-md');
             }
@@ -499,11 +600,12 @@
         const filterContainer = elements.filterContainer;
         filterContainer.innerHTML = '';
 
-        // 1. Normál Kategóriák (Kezdőoldal, Elite, WC)
+        // 1. Normál Kategóriák (Kezdőoldal, Hiányzó Kártyák, Elite, WC)
         structured.regular.filter(cat => cat !== 'Összes kártya').forEach(category => {
             if (!category) return;
-            // Az asztali nézethez szükséges a text-left, de mobilon középre igazítjuk a CSS-ben
-            const button = createButton(category, category);
+            // Különleges stílus a Hiányzó Kártyák menüponthoz
+            const extraClass = category === 'Hiányzó Kártyák' ? 'bg-[#FF6B6B] text-white hover:bg-[#FF6B6B]80' : '';
+            const button = createButton(category, category, extraClass);
             filterContainer.appendChild(button);
         });
 
@@ -511,21 +613,15 @@
         const clubWrapper = document.createElement('div');
         clubWrapper.id = 'club-wrapper'; 
         
-        // Klubok Fő Gomb/Címke
         const clubButton = document.createElement('button');
         clubButton.id = 'club-main-button'; 
-        // JAVÍTVA: A text-left hozzáadva a w-full-hoz és a padding/méret javítva
-        // KLASSZ JAVÍTÁS: A 'text-left' most már a gombokon van.
         clubButton.className = 'w-full text-left font-bold text-sm py-1.5 px-3 rounded-lg transition-colors duration-200 bg-gray-200 text-gray-700 hover:bg-gray-300';
-        clubButton.textContent = 'Klubok ▲'; // Név javítva
+        clubButton.textContent = 'Klubok ▲';
         
-        // Lenyíló Konténer (Klubok)
         const dropdownMenu = document.createElement('ul');
         dropdownMenu.id = 'club-dropdown-menu';
-        // FONTOS: Eltávolítottam a 'hidden' osztályt a CLUB-DROPDOWN-MENU-ról!
         dropdownMenu.className = 'w-full bg-white rounded-lg shadow-inner py-1 z-20 border-t border-gray-100 max-h-[250px] overflow-y-auto';
 
-        // ÚJ: Click handler a lenyíló menü BEZÁRÁSÁHOZ/kinyitásához
         clubButton.addEventListener('click', (e) => {
             e.preventDefault();
             const isHidden = dropdownMenu.classList.contains('hidden');
@@ -544,7 +640,6 @@
         structured.clubs.forEach(clubName => {
             const listItem = document.createElement('li');
             const clubFilterButton = createButton(clubName, clubName, 'text-left w-full rounded-none');
-            // JAVÍTVA: Itt is csökkentjük a méretet a többi gombhoz illeszkedve
             clubFilterButton.classList.remove('py-2');
             clubFilterButton.classList.add('py-1.5');
             
